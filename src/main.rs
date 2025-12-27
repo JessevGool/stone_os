@@ -4,11 +4,15 @@
 #![test_runner(stone_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+use bootloader::{BootInfo, entry_point};
 use core::panic::PanicInfo;
-use stone_os::println;
+use stone_os::{memory::BootInfoFrameAllocator, println};
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use stone_os::memory;
+    use x86_64::{structures::paging::Page, VirtAddr};
     println!("Hello World{}", "!");
 
     stone_os::init();
