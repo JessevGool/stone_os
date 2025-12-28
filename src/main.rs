@@ -6,11 +6,14 @@
 
 use bootloader::{BootInfo, entry_point};
 use core::panic::PanicInfo;
-use stone_os::println;
+use stone_os::{
+    println,
+    task::{Task, executor::Executor, keyboard, simple_executor::SimpleExecutor},
+};
 use x86_64::VirtAddr;
 
 extern crate alloc;
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
+use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
@@ -51,6 +54,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         Rc::strong_count(&cloned_reference)
     );
 
+    let mut executor = Executor::new(); 
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
+
     #[cfg(test)]
     test_main();
 
@@ -58,7 +66,14 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     stone_os::hlt_loop();
 }
 
+async fn async_number() -> u32 {
+    42
+}
 
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number {}", number);
+}
 /// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
