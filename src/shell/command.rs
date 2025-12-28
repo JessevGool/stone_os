@@ -24,6 +24,11 @@ pub fn commands() -> &'static [Command] {
             description: "Show command history",
             execute: cmd_history,
         },
+        Command {
+            name: "clear",
+            description: "Clear the screen",
+            execute: cmd_clear,
+        },
     ]
 }
 
@@ -43,4 +48,12 @@ fn cmd_history(shell: &mut Shell, _args: &[&str]) {
     for (i, command) in shell.history.iter().enumerate() {
         println!("{}: {}", i + 1, command);
     }
+}
+
+fn cmd_clear(shell: &mut Shell, _args: &[&str]) {
+    use crate::vga_buffer::WRITER;
+    use x86_64::instructions::interrupts;
+    interrupts::without_interrupts(|| {
+        WRITER.lock().clear_screen();
+    });
 }
