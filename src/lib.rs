@@ -21,6 +21,7 @@ pub mod memory;
 pub mod allocator;
 pub mod task;
 pub mod shell;
+pub mod loading_bar;
 
 pub fn init() {
     gdt::init();
@@ -100,3 +101,9 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 
+pub fn sleep_ms(milliseconds: u64) {
+    let iterations = milliseconds * 1_000_000 / 120;
+    for _ in 0..iterations {
+        x86_64::instructions::nop();
+    }
+}

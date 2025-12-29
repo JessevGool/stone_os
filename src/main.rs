@@ -7,8 +7,10 @@
 use bootloader::{BootInfo, entry_point};
 use core::panic::PanicInfo;
 use stone_os::{
+    loading_bar::LoadingBar,
     println,
     task::{Task, executor::Executor, keyboard, simple_executor::SimpleExecutor},
+    vga_buffer::Color,
 };
 use x86_64::VirtAddr;
 
@@ -21,14 +23,30 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use stone_os::memory::{self, BootInfoFrameAllocator};
     use x86_64::VirtAddr;
 
-    println!("Hello World{}", "!");
-    stone_os::init();
+    // Position loading bar at bottom (row 22, leaving room for the 3-row bar at rows 22-24)
+    let mut loading_bar = LoadingBar::new(40, 20, 22, Color::Green, Color::Black);
 
+    println!("Initializing...");
+
+    loading_bar.update(0, 5);
+    stone_os::init();
+    stone_os::sleep_ms(1000);
+    loading_bar.update(1, 5);
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    stone_os::sleep_ms(1000);
+    loading_bar.update(2, 5);
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+    stone_os::sleep_ms(1000);
+    loading_bar.update(3, 5);
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+    stone_os::sleep_ms(1000);
+    loading_bar.update(5, 5);
+
+    // Clear loading bar when done
+    stone_os::sleep_ms(1000);
+    loading_bar.clear();
 
     // allocate a number on the heap
     let heap_value = Box::new(41);
@@ -54,7 +72,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         Rc::strong_count(&cloned_reference)
     );
 
-    let mut executor = Executor::new(); 
+    let mut executor = Executor::new();
     executor.spawn(Task::new(example_task()));
     executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();
