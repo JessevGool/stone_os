@@ -1,8 +1,10 @@
 use crate::print;
 use crate::println;
+use crate::vga_buffer::WRITER;
 use alloc::string::String;
 use alloc::vec::Vec;
 use pc_keyboard::{DecodedKey, KeyCode};
+use x86_64::instructions::interrupts;
 
 pub mod command;
 
@@ -19,33 +21,58 @@ impl Shell {
         }
     }
 
-    pub fn handle_key(&mut self, key: DecodedKey) {
-        match key {
-            DecodedKey::Unicode(character) => {
-                if character == '\n' {
-                    println!();
-                    self.execute_command();
-                    self.buffer.clear();
-                    print!("$ ");
-                } else if character == '\u{8}' {
-                    if !self.buffer.is_empty() {
-                        self.buffer.pop();
-                        print!("\u{8} \u{8}");
-                    }
-                } else {
-                    self.buffer.push(character);
-                    print!("{}", character);
-                }
-            }
-            DecodedKey::RawKey(KeyCode::NumpadEnter) => {
+pub fn handle_key(&mut self, key: DecodedKey) {
+    match key {
+        DecodedKey::Unicode(character) => match character {
+            '\n' => {
                 println!();
                 self.execute_command();
                 self.buffer.clear();
                 print!("$ ");
             }
-            _ => {}
+            '\u{8}' => {
+                if !self.buffer.is_empty() {
+                    self.buffer.pop();
+                    interrupts::without_interrupts(|| {
+                        WRITER.lock().backspace();
+                    });
+                }
+            }
+            _ => {
+                self.buffer.push(character);
+                print!("{}", character);
+            }
+        },
+        DecodedKey::RawKey(key_code) => {
+            match key_code {
+                KeyCode::NumpadEnter | KeyCode::Return => {
+                    println!();
+                    self.execute_command();
+                    self.buffer.clear();
+                    print!("$ ");
+                }
+                KeyCode::Backspace => {
+                    if !self.buffer.is_empty() {
+                        self.buffer.pop();
+                        interrupts::without_interrupts(|| {
+                            WRITER.lock().backspace();
+                        });
+                    }
+                }
+                KeyCode::Delete => {
+                    if !self.buffer.is_empty() {
+                        self.buffer.pop();
+                        interrupts::without_interrupts(|| {
+                            WRITER.lock().backspace();
+                        });
+                    }
+                }
+                _ => {}
+            }
         }
+        _ => {}
     }
+}
 
     fn execute_command(&mut self) {
         let line = core::mem::take(&mut self.buffer);

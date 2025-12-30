@@ -1,3 +1,5 @@
+use alloc::string::ToString;
+
 use super::Shell;
 use crate::println;
 
@@ -29,6 +31,21 @@ pub fn commands() -> &'static [Command] {
             description: "Clear the screen",
             execute: cmd_clear,
         },
+        Command {
+            name: "shutdown",
+            description: "Shut down the system",
+            execute: cmd_shutdown,
+        },
+        Command {
+            name: "setValue",
+            description: "Set a value in the system state",
+            execute: cmd_set_value,
+        },
+        Command {
+            name: "getValue",
+            description: "Get a value from the system state",
+            execute: cmd_get_value,
+        }
     ]
 }
 
@@ -56,4 +73,41 @@ fn cmd_clear(shell: &mut Shell, _args: &[&str]) {
     interrupts::without_interrupts(|| {
         WRITER.lock().clear_screen();
     });
+}
+
+fn cmd_shutdown(_shell: &mut Shell, _args: &[&str]) {
+    crate::println!("Shutting down...");
+
+    if let Err(e) = crate::state::State::current().save() {
+        crate::println!("Failed to save state: {:?}", e);
+    } else {
+        crate::println!("State saved successfully.");
+    }
+    crate::exit_qemu(crate::QemuExitCode::Success);
+}
+
+fn cmd_set_value(_shell: &mut Shell, args: &[&str]) {
+    use crate::state::State;
+    if args.len() != 2 {
+        println!("Usage: setValue <key> <value>");
+        return;
+    }
+    let value = args[1].to_string();
+    
+    State::update(args[0].to_string(), value.clone());
+    println!("Value set to: {}", value);
+}
+
+fn cmd_get_value(_shell: &mut Shell, _args: &[&str]) {
+    use crate::state::State;
+    let state = State::current();
+    if _args.len() != 1 {
+        println!("Usage: getValue <key>");
+        return;
+    }
+    let key = _args[0];
+    match state.get_value(key) {
+        Some(value) => println!("Current value for {}: {}", key, value),
+        None => println!("No value found for key: {}", key),
+    }
 }

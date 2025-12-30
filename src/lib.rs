@@ -22,6 +22,7 @@ pub mod allocator;
 pub mod task;
 pub mod shell;
 pub mod loading_bar;
+pub mod state;
 
 pub fn init() {
     gdt::init();
@@ -30,6 +31,7 @@ pub fn init() {
         interrupts::PICS.lock().initialize();
     }
     x86_64::instructions::interrupts::enable();
+
 }
 
 pub fn hlt_loop() -> ! {

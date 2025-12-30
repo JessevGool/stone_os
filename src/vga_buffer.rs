@@ -78,7 +78,21 @@ impl Writer {
             }
         }
     }
+    pub fn backspace(&mut self) {
+        if self.column_position > 0 {
+            self.column_position -= 1;
+            let row = BUFFER_HEIGHT - 1;
+            let col = self.column_position;
 
+            let color_code = self.color_code;
+
+            self.buffer.chars[row][col].write(ScreenChar {
+                ascii_character: b' ',
+                color_code,
+            });
+        }
+    }
+    
     pub fn write_at(&mut self, row: usize, col: usize, c: u8, color: ColorCode) {
         if row < BUFFER_HEIGHT && col < BUFFER_WIDTH {
             self.buffer.chars[row][col].write(ScreenChar {

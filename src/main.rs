@@ -30,22 +30,21 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     loading_bar.update(0, 5);
     stone_os::init();
-    stone_os::sleep_ms(1000);
+
     loading_bar.update(1, 5);
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    stone_os::sleep_ms(1000);
+
     loading_bar.update(2, 5);
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
-    stone_os::sleep_ms(1000);
+
     loading_bar.update(3, 5);
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-    stone_os::sleep_ms(1000);
+
     loading_bar.update(5, 5);
 
     // Clear loading bar when done
-    stone_os::sleep_ms(1000);
     loading_bar.clear();
 
     // allocate a number on the heap
