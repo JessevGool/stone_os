@@ -10,7 +10,11 @@ pub struct LoadingBar {
 }
 
 impl LoadingBar {
-    pub fn new(width: usize, x: usize, y: usize, foreground: Color, background: Color) -> Self {
+    pub fn new(foreground: Color, background: Color) -> Self {
+        let buffer_width = crate::vga_buffer::BUFFER_WIDTH;
+        let x = buffer_width - (buffer_width / 4);
+        let width = buffer_width / 4 - 2;
+        let y = crate::vga_buffer::BUFFER_HEIGHT - 4;
         LoadingBar {
             width,
             current: 0,
@@ -56,7 +60,7 @@ impl LoadingBar {
         interrupts::without_interrupts(|| {
             let mut writer = WRITER.lock();
             
-            for i in 0..self.width + 2 {
+            for i in 1..self.width + 2 {
                 let col = self.x + i;
                 writer.write_at(self.y, col, b'-', color);
             }
@@ -64,11 +68,8 @@ impl LoadingBar {
             for i in 0..self.width {
                 let col = self.x + i + 1;
                 
-                if i == 0 {
-                    writer.write_at(self.y + 1, self.x, b'[', color);
-                }
                 
-                let filled = if i < self.current { b'=' } else { b' ' };
+                let filled = if i < self.current { b'#' } else { b'.' };
                 writer.write_at(self.y + 1, col, filled, color);
                 
                 if i == self.width - 1 {
@@ -76,7 +77,7 @@ impl LoadingBar {
                 }
             }
 
-            for i in 0..self.width + 2 {
+            for i in 1..self.width + 2 {
                 let col = self.x + i;
                 writer.write_at(self.y + 2, col, b'-', color);
             }

@@ -24,7 +24,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use x86_64::VirtAddr;
 
     // Position loading bar at bottom (row 22, leaving room for the 3-row bar at rows 22-24)
-    let mut loading_bar = LoadingBar::new(40, 20, 22, Color::Green, Color::Black);
+    let mut loading_bar = LoadingBar::new(  Color::Green, Color::Black);
 
     println!("Initializing...");
 
@@ -45,7 +45,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     loading_bar.update(5, 5);
 
     // Clear loading bar when done
-    loading_bar.clear();
+    //loading_bar.clear();
 
     // allocate a number on the heap
     let heap_value = Box::new(41);
